@@ -1,0 +1,64 @@
+<%- include('partials/head') %>
+<%- include('partials/header') %>
+
+<main class="page">
+  <div class="page-head">
+    <div>
+      <div class="eyebrow">고객지원 센터</div>
+      <h1>무엇을 도와드릴까요?</h1>
+      <p class="sub">계정 복구는 상담 챗봇이, 그 외 문의는 1:1 문의로 담당자가 직접 답변드립니다.</p>
+    </div>
+  </div>
+
+  <%- include('partials/flash') %>
+
+  <div class="cols">
+    <a class="card feature" href="/chat">
+      <span class="ic">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17 9.5a6.5 6.5 0 01-8.9 6L3 17l1.5-5.1A6.5 6.5 0 1117 9.5z"/></svg>
+      </span>
+      <h2>계정 복구 상담</h2>
+      <p>비밀번호나 계정을 분실하셨나요? 챗봇이 아이디와 이메일로 신원을 확인한 뒤 비밀번호 재설정 토큰을 안내해 드립니다.</p>
+      <span class="go">상담 시작하기
+        <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10h11M11 6l4 4-4 4"/></svg>
+      </span>
+    </a>
+
+    <a class="card feature" href="/inquiries">
+      <span class="ic">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3h12v11H7l-3 3z"/><path d="M7.5 7h5M7.5 10h3"/></svg>
+      </span>
+      <h2>1:1 문의</h2>
+      <p>작성하신 문의는 담당 관리자와 작성자 본인만 열람할 수 있습니다. 다른 이용자에게는 공개되지 않습니다.</p>
+      <span class="go">문의 남기기
+        <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10h11M11 6l4 4-4 4"/></svg>
+      </span>
+    </a>
+
+    <% if (!currentUser) { %>
+      <a class="card feature" href="/register">
+        <span class="ic">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="7" r="3"/><path d="M4 16.5c0-2.8 2.7-4.5 6-4.5s6 1.7 6 4.5"/></svg>
+        </span>
+        <h2>회원가입</h2>
+        <p>아이디, 비밀번호, 이메일만 입력하면 바로 이용하실 수 있습니다. 별도의 이메일 인증 절차는 없습니다.</p>
+        <span class="go">가입하기
+          <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10h11M11 6l4 4-4 4"/></svg>
+        </span>
+      </a>
+    <% } else { %>
+      <div class="card card-pad">
+        <h2 style="font-size:16px;margin-bottom:14px">내 계정</h2>
+        <dl class="kv">
+          <dt>아이디</dt><dd><%= currentUser.username %></dd>
+          <dt>이메일</dt><dd><%= currentUser.email %></dd>
+          <dt>권한</dt><dd><%= currentUser.role === 'admin' ? '관리자' : '일반 회원' %></dd>
+          <dt>접속 IP</dt><dd><%= clientIp %></dd>
+        </dl>
+        <p class="help" style="margin-top:14px">로그인 세션은 위 IP 에서만 유효합니다.</p>
+      </div>
+    <% } %>
+  </div>
+</main>
+
+<%- include('partials/footer') %>

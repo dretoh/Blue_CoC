@@ -1,0 +1,22 @@
+# 의존성
+node_modules/
+
+# 비밀값 — API 키가 들어있으므로 절대 커밋하지 않는다
+.env
+.env.local
+.env.*.local
+
+# 런타임 데이터 (SQLite)
+data/
+*.db
+*.db-wal
+*.db-shm
+
+# 산출물 / 임시
+.shots/
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db

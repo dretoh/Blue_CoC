@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# WSL / 호스트 / 외부에서 이 서비스에 접속하는 주소를 정리해서 출력한다.
+PORT="${PORT:-3000}"
+WSL_IP="$(ip -4 addr show eth0 2>/dev/null | awk '/inet /{print $2}' | cut -d/ -f1 | head -1)"
+[ -z "$WSL_IP" ] && WSL_IP="$(hostname -I | awk '{print $1}')"
+
+echo ""
+echo "  ACCESS POINTS"
+echo "  ------------------------------------------------------------"
+echo "  WSL 내부         http://localhost:${PORT}"
+echo "  Windows 호스트   http://localhost:${PORT}          (WSL2 localhost 포워딩)"
+echo "                   http://${WSL_IP}:${PORT}   (WSL2 eth0 직접)"
+echo ""
+echo "  같은 공유기의 다른 기기에서 접속하려면 Windows 관리자 PowerShell 에서:"
+echo "    netsh interface portproxy add v4tov4 listenport=${PORT} listenaddress=0.0.0.0 connectport=${PORT} connectaddress=${WSL_IP}"
+echo "    New-NetFirewallRule -DisplayName \"BlueCell ${PORT}\" -Direction Inbound -LocalPort ${PORT} -Protocol TCP -Action Allow"
+echo "    # 해제: netsh interface portproxy delete v4tov4 listenport=${PORT} listenaddress=0.0.0.0"
+echo ""
+echo "  주의: WSL 재부팅 시 eth0 IP 가 바뀌므로 portproxy 를 다시 잡아야 합니다."
+echo "  ------------------------------------------------------------"
+echo ""

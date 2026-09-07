@@ -1,0 +1,19 @@
+<%- include('partials/head') %>
+<%- include('partials/header') %>
+
+<main class="auth">
+  <div class="auth-box" style="text-align:center">
+    <div class="card card-pad" style="padding:44px 28px">
+      <div class="empty" style="padding:0">
+        <span class="ic">
+          <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="10" r="7.2"/><path d="M10 6.4v4.2M10 13.4h.01"/></svg>
+        </span>
+        <h3 style="font-size:19px"><%= title %></h3>
+        <p style="margin-top:8px"><%= message %></p>
+      </div>
+      <a class="btn btn-secondary" href="/" style="margin-top:22px">홈으로 돌아가기</a>
+    </div>
+  </div>
+</main>
+
+<%- include('partials/footer') %>

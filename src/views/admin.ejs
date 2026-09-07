@@ -1,0 +1,111 @@
+<%- include('partials/head') %>
+<%- include('partials/header') %>
+
+<main class="page">
+  <div class="page-head">
+    <div>
+      <h1>관리자 콘솔</h1>
+      <p class="sub">계정, 세션, 활동 기록을 확인합니다.</p>
+    </div>
+    <a class="btn btn-secondary" href="/inquiries">문의 전체 보기</a>
+  </div>
+
+  <%- include('partials/flash') %>
+
+  <div class="stack-lg">
+    <div class="stats">
+      <div class="card stat"><div class="k">회원</div><div class="v"><%= stats.users %></div></div>
+      <div class="card stat"><div class="k">전체 문의</div><div class="v"><%= stats.inquiries %></div></div>
+      <div class="card stat"><div class="k">미열람 문의</div><div class="v <%= stats.unread ? 'alert-num' : '' %>"><%= stats.unread %></div></div>
+      <div class="card stat"><div class="k">활성 세션</div><div class="v"><%= stats.activeSessions %></div></div>
+      <div class="card stat"><div class="k">상담 세션</div><div class="v"><%= stats.chats %></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h2>계정</h2>
+        <span class="count"><%= users.length %>개</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>아이디</th><th>이메일</th><th>권한</th><th>가입일</th></tr></thead>
+          <tbody>
+          <% users.forEach(function (u) { %>
+            <tr>
+              <td class="num"><%= u.id %></td>
+              <td><strong><%= u.username %></strong></td>
+              <td class="mono"><%= u.email %></td>
+              <td><span class="tag <%= u.role === 'admin' ? 'tag-new' : 'tag-closed' %>"><%= u.role === 'admin' ? '관리자' : '일반' %></span></td>
+              <td class="num"><%= new Date(u.created_at).toLocaleString('ko-KR', { dateStyle: 'medium', timeStyle: 'short' }) %></td>
+            </tr>
+          <% }); %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h2>세션</h2>
+        <span class="count">발급 IP 에 바인딩됨</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>세션</th><th>계정</th><th>바인딩 IP</th><th>발급</th><th>상태</th></tr></thead>
+          <tbody>
+          <% if (!sessions.length) { %>
+            <tr><td colspan="5"><div class="empty" style="padding:30px 0"><p>세션이 없습니다.</p></div></td></tr>
+          <% } %>
+          <% sessions.forEach(function (s) { %>
+            <tr>
+              <td class="mono"><%= s.id.slice(0, 12) %>…</td>
+              <td>
+                <%= s.username %>
+                <% if (s.role === 'admin') { %> <span class="tag tag-plain tag-new">관리자</span><% } %>
+              </td>
+              <td class="mono"><%= s.bound_ip %></td>
+              <td class="num"><%= new Date(s.created_at).toLocaleString('ko-KR', { dateStyle: 'short', timeStyle: 'short' }) %></td>
+              <td>
+                <% if (s.revoked_at) { %><span class="tag tag-closed">해지됨</span>
+                <% } else if (s.expires_at <= Date.now()) { %><span class="tag tag-closed">만료</span>
+                <% } else { %><span class="tag tag-answered">활성</span><% } %>
+              </td>
+            </tr>
+          <% }); %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h2>활동 기록</h2>
+        <span class="count">최근 <%= events.length %>건</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>시각</th><th>이벤트</th><th>주체</th><th>IP</th><th>상세</th></tr></thead>
+          <tbody>
+          <% if (!events.length) { %>
+            <tr><td colspan="5"><div class="empty" style="padding:30px 0"><p>기록이 없습니다.</p></div></td></tr>
+          <% } %>
+          <% events.forEach(function (e) { %>
+            <tr>
+              <td class="num"><%= new Date(e.created_at).toLocaleString('ko-KR', { dateStyle: 'short', timeStyle: 'medium' }) %></td>
+              <td class="mono">
+                <% if (/failed|mismatch|injection/.test(e.event)) { %><span class="tag tag-new"><%= e.event %></span>
+                <% } else { %><%= e.event %><% } %>
+              </td>
+              <td class="mono"><%= e.actor || '—' %></td>
+              <td class="mono"><%= e.ip || '—' %></td>
+              <td class="mono" style="color:var(--text-3)"><%= e.detail || '—' %></td>
+            </tr>
+          <% }); %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</main>
+
+<%- include('partials/footer') %>

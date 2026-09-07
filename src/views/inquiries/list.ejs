@@ -1,0 +1,66 @@
+<%- include('../partials/head') %>
+<%- include('../partials/header') %>
+
+<main class="page">
+  <div class="page-head">
+    <div>
+      <h1>1:1 문의</h1>
+      <p class="sub">
+        <% if (isAdmin) { %>
+          관리자 권한으로 전체 문의를 열람하고 있습니다.
+        <% } else { %>
+          작성하신 문의만 표시됩니다. 담당 관리자와 작성자 본인만 열람할 수 있습니다.
+        <% } %>
+      </p>
+    </div>
+    <a class="btn btn-primary" href="/inquiries/new">
+      <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 4.5v11M4.5 10h11"/></svg>
+      새 문의
+    </a>
+  </div>
+
+  <%- include('../partials/flash') %>
+
+  <div class="card">
+    <div class="card-head">
+      <h2><%= isAdmin ? '전체 문의' : '내 문의' %></h2>
+      <span class="count">
+        <%= inquiries.length %>건<% if (isAdmin) { %> · 미열람 <%= inquiries.filter(function(q){ return !q.read_by_admin_at; }).length %>건<% } %>
+      </span>
+    </div>
+
+    <% if (!inquiries.length) { %>
+      <div class="empty">
+        <span class="ic">
+          <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3h12v11H7l-3 3z"/><path d="M7.5 7h5M7.5 10h3"/></svg>
+        </span>
+        <h3>아직 문의가 없습니다</h3>
+        <p>궁금하신 점이 있으시면 언제든 문의를 남겨주세요.</p>
+        <a class="btn btn-secondary" href="/inquiries/new" style="margin-top:18px">첫 문의 작성하기</a>
+      </div>
+    <% } else { %>
+      <% inquiries.forEach(function (q) { %>
+        <a class="inq" href="/inquiries/<%= q.id %>">
+          <div class="inq-main">
+            <div class="inq-title"><%= q.title %></div>
+            <div class="inq-meta">
+              <span>#<%= q.id %></span>
+              <span class="dot">·</span>
+              <span><%= q.author_username %></span>
+              <span class="dot">·</span>
+              <time><%= new Date(q.created_at).toLocaleString('ko-KR', { dateStyle: 'medium', timeStyle: 'short' }) %></time>
+            </div>
+          </div>
+          <div class="inq-side">
+            <% if (isAdmin && !q.read_by_admin_at) { %><span class="tag tag-new">미열람</span><% } %>
+            <span class="tag tag-<%= q.status %>">
+              <%= q.status === 'open' ? '접수됨' : (q.status === 'answered' ? '답변완료' : '종료') %>
+            </span>
+          </div>
+        </a>
+      <% }); %>
+    <% } %>
+  </div>
+</main>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,42 @@
+<%- include('partials/head') %>
+<%- include('partials/header') %>
+
+<main class="auth">
+  <div class="auth-box">
+    <div class="auth-head">
+      <h1>비밀번호 재설정</h1>
+      <p>발급받으신 재설정 토큰으로 새 비밀번호를 설정합니다.</p>
+    </div>
+
+    <%- include('partials/flash') %>
+
+    <div class="card card-pad">
+      <form method="post" action="/reset">
+        <div class="field">
+          <label for="token">비밀번호 재설정 토큰</label>
+          <input id="token" name="token" class="mono" required autofocus spellcheck="false"
+                 placeholder="0a1b2c3d4e5f60718293a4b5c6d7e8f9"
+                 value="<%= typeof form !== 'undefined' && form.token ? form.token : '' %>">
+          <p class="help">상담 챗봇에서 본인 확인을 마치면 발급됩니다.</p>
+        </div>
+
+        <div class="field">
+          <label for="password">새 비밀번호</label>
+          <input id="password" name="password" type="password" required autocomplete="new-password">
+          <p class="help">8자 이상</p>
+        </div>
+
+        <div class="field">
+          <label for="password2">새 비밀번호 확인</label>
+          <input id="password2" name="password2" type="password" required autocomplete="new-password">
+        </div>
+
+        <button class="btn btn-primary btn-block" type="submit" style="margin-top:22px">비밀번호 변경</button>
+      </form>
+    </div>
+
+    <p class="auth-foot">토큰이 없으신가요? <a href="/chat">상담 챗봇에서 발급받기</a></p>
+  </div>
+</main>
+
+<%- include('partials/footer') %>

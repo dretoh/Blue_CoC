@@ -1,0 +1,42 @@
+<header class="nav">
+  <div class="nav-inner">
+    <a class="logo" href="/">
+      <span class="logo-mark">B</span><span>BlueCell</span>
+    </a>
+
+    <nav class="nav-links">
+      <a href="/chat" class="<%= nav === 'chat' ? 'on' : '' %>">상담</a>
+      <a href="/inquiries" class="<%= nav === 'inquiries' ? 'on' : '' %>">1:1 문의</a>
+      <% if (currentUser && currentUser.role === 'admin') { %>
+        <a href="/admin" class="<%= nav === 'admin' ? 'on' : '' %>">관리</a>
+      <% } %>
+    </nav>
+
+    <div class="nav-spacer"></div>
+
+    <div class="nav-right">
+      <% if (currentUser) { %>
+        <%
+          const isAdmin = currentUser.role === 'admin';
+          const initial = currentUser.username.charAt(0).toUpperCase();
+        %>
+        <div class="who">
+          <span class="avatar <%= isAdmin ? 'is-admin' : '' %>"><%= initial %></span>
+          <span class="who-name"><%= currentUser.username %></span>
+          <% if (isAdmin) { %>
+            <%# ACCOUNT SIGNAL — 관리자로 로그인한 경우 우측 상단에서 명확하게 식별된다 %>
+            <span class="badge badge-admin" id="admin-signal" title="관리자 계정으로 로그인되어 있습니다">ADMINISTRATOR</span>
+          <% } else { %>
+            <span class="badge badge-user">USER</span>
+          <% } %>
+        </div>
+        <form method="post" action="/logout" style="margin:0">
+          <button class="btn btn-ghost btn-sm" type="submit">로그아웃</button>
+        </form>
+      <% } else { %>
+        <a class="btn btn-ghost btn-sm" href="/login">로그인</a>
+        <a class="btn btn-primary btn-sm" href="/register">회원가입</a>
+      <% } %>
+    </div>
+  </div>
+</header>

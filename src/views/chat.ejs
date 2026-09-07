@@ -1,0 +1,46 @@
+<%- include('partials/head') %>
+<%- include('partials/header') %>
+
+<main class="page narrow">
+  <div class="page-head">
+    <div>
+      <h1>고객상담</h1>
+      <p class="sub">계정 복구(비밀번호·계정 분실)를 도와드립니다. 본인 확인 후 비밀번호 재설정 토큰을 안내해 드립니다.</p>
+    </div>
+  </div>
+
+  <div class="card chat">
+    <div class="chat-head">
+      <span class="bot-avatar">
+        <svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6" width="13" height="9.5" rx="2.5"/><path d="M10 6V3.5M7.2 10.2v1M12.8 10.2v1"/></svg>
+      </span>
+      <div class="t">
+        <b>상담 챗봇</b>
+        <span><i class="live-dot" id="live"></i><span id="llm-status">연결 확인 중…</span></span>
+      </div>
+      <button class="btn btn-ghost btn-sm" id="restart" type="button">새 상담</button>
+    </div>
+
+    <div class="chat-body" id="log" aria-live="polite" aria-label="상담 대화 내용"></div>
+
+    <div class="chips" id="chips" hidden>
+      <button class="chip" type="button" data-say="비밀번호를 분실했어요">비밀번호를 분실했어요</button>
+      <button class="chip" type="button" data-say="계정을 찾고 싶어요">계정을 찾고 싶어요</button>
+      <button class="chip" type="button" data-say="영업시간이 어떻게 되나요?">영업시간이 어떻게 되나요?</button>
+    </div>
+
+    <form class="chat-foot" id="form" autocomplete="off">
+      <input id="input" placeholder="메시지를 입력하세요…" maxlength="500" autocomplete="off" required aria-label="메시지 입력">
+      <button class="btn btn-primary" id="send" type="submit" aria-label="전송">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3L9.5 11M17 3l-5 14-2.5-6L3.5 8.5 17 3z"/></svg>
+      </button>
+    </form>
+  </div>
+
+  <p class="help" style="margin-top:14px">
+    계정 복구와 무관한 문의는 처리되지 않습니다. 본인 확인은 <strong>가입 시 등록하신 아이디와 이메일이 모두 일치</strong>할 때만 완료됩니다.
+  </p>
+</main>
+
+<script src="/js/chat.js"></script>
+<%- include('partials/footer') %>

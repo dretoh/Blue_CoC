@@ -1,0 +1,30 @@
+{
+  "name": "blue-cell-service",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Episode 1 : 감염된 챗봇 — Blue Team mission service (고객지원 포털 + 계정복구 챗봇)",
+  "type": "commonjs",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "seed": "node src/seed.js",
+    "reset-db": "node -e \"require('fs').rmSync('data/app.db',{force:true});require('fs').rmSync('data/app.db-wal',{force:true});require('fs').rmSync('data/app.db-shm',{force:true});console.log('DB reset')\"",
+    "test": "node test/coc-check.js",
+    "test:llm": "node test/llm-path-check.js",
+    "mock-llm": "node test/mock-llm.js",
+    "whereami": "bash scripts/whereami.sh"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^11.5.0",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.4.1"
+  },
+  "engines": {
+    "node": "20.x"
+  }
+}
