@@ -224,17 +224,28 @@ SEED_USER_EMAIL=user@example.com
 Railway 는 Envoy 기반이고 **내부 프록시 IP(`100.64.x.x`)가 요청마다 바뀝니다.**
 소켓 IP 나 `X-Forwarded-For` 를 그대로 쓰면 매 요청이 다른 IP 로 보여 세션이 즉시 무효화됩니다.
 
-그래서 Railway 환경변수(`RAILWAY_*`)가 감지되면 **Envoy 엣지가 직접 세팅하는
-`x-envoy-external-address` 헤더**를 자동으로 사용합니다. 별도 설정이 필요 없습니다.
+실측 결과 Railway 엣지는 다음과 같이 동작합니다.
 
-이 헤더는 엣지에서 덮어쓰므로 클라이언트가 위조할 수 없습니다.
-(`X-Forwarded-For` 는 클라이언트가 앞에 값을 끼워넣을 수 있어 IP 바인딩 우회에 쓰일 수 있습니다.)
+| 헤더 | 값 | 위조 |
+|---|---|---|
+| `x-real-ip` | 진짜 클라이언트 IP (단일 값) | 엣지가 덮어씀 → **불가** |
+| `x-forwarded-for` | `<클라이언트>, <Railway 내부주소>` | 엣지가 덮어씀 → 불가 |
+| `x-envoy-external-address` | 보내지 않음 | — |
+
+`x-forwarded-for` 의 두 번째 값(Railway 내부주소)은 **요청마다 바뀌므로**
+`TRUST_PROXY_HOPS` 같은 hop 기반 계산은 쓸 수 없습니다.
+
+그래서 Railway 환경변수(`RAILWAY_*`)가 감지되면 **`x-real-ip`** 를 자동으로 사용합니다.
+별도 설정이 필요 없습니다.
+
+> 설정되지 않은 헤더를 "있으면 믿는" 식의 자동 폴백은 두지 않습니다.
+> 플랫폼이 그 헤더를 덮어쓰지 않으면 누구나 값을 넣어 IP 바인딩을 우회할 수 있기 때문입니다.
 
 다른 플랫폼이라면 `CLIENT_IP_HEADER` 로 직접 지정하세요.
 
 | 플랫폼 | 설정 |
 |---|---|
-| Railway | 자동 (`x-envoy-external-address`) |
+| Railway | 자동 (`x-real-ip`) |
 | Cloudflare | `CLIENT_IP_HEADER=cf-connecting-ip` |
 | Fly.io | `CLIENT_IP_HEADER=fly-client-ip` |
 | nginx 직접 구성 | `TRUST_PROXY_HOPS=1` |

@@ -72,12 +72,18 @@ module.exports = {
 
   /**
    * 플랫폼 엣지가 직접 세팅하는 "신뢰 가능한 클라이언트 IP 헤더".
-   * X-Forwarded-For 는 클라이언트가 앞에 값을 끼워넣을 수 있어 IP 바인딩 우회에 쓰일 수 있다.
-   * Railway 는 Envoy 를 쓰며 x-envoy-external-address 를 엣지에서 덮어써 준다.
-   * Railway 환경변수가 감지되면 자동으로 이 헤더를 사용한다.
+   *
+   * Railway 실측(2026-09) 결과:
+   *   - 엣지가 x-real-ip 와 x-forwarded-for 를 모두 덮어쓴다.
+   *     클라이언트가 보낸 값은 폐기되므로 위조할 수 없다.
+   *   - x-real-ip = 진짜 클라이언트 IP (단일 값)
+   *   - x-forwarded-for = "<클라이언트>, <Railway 내부주소>" 이고
+   *     내부주소는 요청마다 바뀌므로 hop 기반 계산은 불안정하다.
+   *   - x-envoy-external-address 는 보내지 않는다.
+   * 따라서 Railway 에서는 x-real-ip 를 사용한다.
    */
   CLIENT_IP_HEADER: String(
-    process.env.CLIENT_IP_HEADER || (IS_RAILWAY ? 'x-envoy-external-address' : '')
+    process.env.CLIENT_IP_HEADER || (IS_RAILWAY ? 'x-real-ip' : '')
   ).trim().toLowerCase(),
 
   IS_RAILWAY,

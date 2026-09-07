@@ -54,19 +54,9 @@ function resolve(req) {
     }
   }
 
-  // 자동 복구: 소켓 IP 가 사설/CGNAT 이면 우리는 확실히 프록시 뒤에 있다.
-  // 이때 Envoy 가 직접 세팅하는 x-envoy-external-address 가 있으면 그것을 쓴다.
-  // (Envoy 는 외부 요청에서 x-envoy-* 헤더를 정리하므로 클라이언트가 위조할 수 없다.)
-  // Railway 가 RAILWAY_* 환경변수를 주입하지 않는 경우에도 동작하도록 하기 위한 안전망.
-  if (!config.CLIENT_IP_HEADER && isPrivate(socketIp)) {
-    const envoy = req.headers['x-envoy-external-address'];
-    if (envoy) {
-      const ip = normalize(String(envoy).split(',')[0]);
-      if (ip && !isPrivate(ip)) {
-        return { ip, source: 'header:x-envoy-external-address (auto)', socketIp };
-      }
-    }
-  }
+  // 주의: 설정되지 않은 헤더를 "있으면 믿는" 식의 자동 복구를 두지 않는다.
+  // 플랫폼이 그 헤더를 덮어쓰지 않으면 누구나 값을 넣어 IP 바인딩을 우회할 수 있다.
+  // 신뢰 헤더는 반드시 CLIENT_IP_HEADER 로 명시하거나 플랫폼 감지로만 결정한다.
 
   const hops = config.TRUST_PROXY_HOPS;
   if (hops > 0) {
