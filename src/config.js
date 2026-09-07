@@ -15,6 +15,14 @@ const path = require('path');
  * 그래서 LLM_MODEL_ID 로 "표기"만 바꿀 수 있게 하되,
  * 그 값이 정말 Llama 3.2 3B 인지 아래에서 검증해 다른 모델로는 절대 바뀌지 않게 한다.
  */
+/** Railway 위에서 도는지 감지 (플랫폼이 주입하는 환경변수로 판단) */
+const IS_RAILWAY = !!(
+  process.env.RAILWAY_ENVIRONMENT ||
+  process.env.RAILWAY_PUBLIC_DOMAIN ||
+  process.env.RAILWAY_PROJECT_ID ||
+  process.env.RAILWAY_SERVICE_ID
+);
+
 const LOCKED_MODEL = 'llama-3.2-3b-instruct';
 
 /** 공급자별 표기를 비교 가능한 형태로 정규화한다. */
@@ -61,6 +69,21 @@ module.exports = {
   // reverse proxy(nginx / cloudflare / ngrok) 뒤에 배포할 때 hop 수를 지정한다.
   // 0 이면 프록시를 신뢰하지 않고 소켓 IP 를 그대로 공인 IP 로 취급한다.
   TRUST_PROXY_HOPS: Number(process.env.TRUST_PROXY_HOPS || 0),
+
+  /**
+   * 플랫폼 엣지가 직접 세팅하는 "신뢰 가능한 클라이언트 IP 헤더".
+   * X-Forwarded-For 는 클라이언트가 앞에 값을 끼워넣을 수 있어 IP 바인딩 우회에 쓰일 수 있다.
+   * Railway 는 Envoy 를 쓰며 x-envoy-external-address 를 엣지에서 덮어써 준다.
+   * Railway 환경변수가 감지되면 자동으로 이 헤더를 사용한다.
+   */
+  CLIENT_IP_HEADER: String(
+    process.env.CLIENT_IP_HEADER || (IS_RAILWAY ? 'x-envoy-external-address' : '')
+  ).trim().toLowerCase(),
+
+  IS_RAILWAY,
+
+  // 클라이언트 IP 판정 과정을 눈으로 확인하기 위한 진단 엔드포인트 (/debug/ip)
+  DEBUG_IP: String(process.env.DEBUG_IP || 'false') === 'true',
 
   DB_FILE: process.env.DB_FILE || path.join(__dirname, '..', 'data', 'app.db'),
 

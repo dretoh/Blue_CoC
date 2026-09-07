@@ -45,6 +45,34 @@ app.use((req, res, next) => {
   next();
 });
 
+/**
+ * 클라이언트 IP 판정 진단. DEBUG_IP=true 일 때만 열린다.
+ * 배포 직후 프록시 헤더가 어떻게 오는지 확인하고, 확인이 끝나면 반드시 끈다.
+ */
+app.get('/debug/ip', (req, res) => {
+  if (!config.DEBUG_IP) return res.status(404).json({ error: 'not_found' });
+  const net = require('./services/net');
+  const detail = net.resolve(req);
+  const forwarded = {};
+  for (const [k, v] of Object.entries(req.headers)) {
+    if (/^(x-forwarded|x-real-ip|x-envoy|cf-connecting|true-client|fly-client|forwarded)/i.test(k)) {
+      forwarded[k] = v;
+    }
+  }
+  res.json({
+    resolvedIp: detail.ip,
+    source: detail.source,
+    socketIp: detail.socketIp,
+    looksPrivate: net.isPrivate(detail.ip),
+    config: {
+      CLIENT_IP_HEADER: config.CLIENT_IP_HEADER || null,
+      TRUST_PROXY_HOPS: config.TRUST_PROXY_HOPS,
+      IS_RAILWAY: config.IS_RAILWAY,
+    },
+    forwardedHeaders: forwarded,
+  });
+});
+
 app.get('/healthz', (req, res) => {
   res.json({
     ok: true,
@@ -85,7 +113,7 @@ const server = app.listen(config.PORT, config.HOST, async () => {
   console.log('  ' + '-'.repeat(60));
   console.log(`  Local      http://localhost:${config.PORT}`);
   console.log(`  Bind       ${config.HOST}:${config.PORT}`);
-  console.log(`  Proxy hops ${config.TRUST_PROXY_HOPS}`);
+  console.log(`  Client IP  ${config.CLIENT_IP_HEADER ? `header ${config.CLIENT_IP_HEADER}` : `x-forwarded-for (hops=${config.TRUST_PROXY_HOPS})`}${config.IS_RAILWAY ? '  [Railway 자동감지]' : ''}`);
   console.log(`  DB         ${config.DB_FILE}`);
   console.log(`  Model lock ${config.LLM_MODEL}`);
   if (config.LLM_MODEL_ID !== config.LLM_MODEL) console.log(`  Wire id    ${config.LLM_MODEL_ID}`);
@@ -94,7 +122,7 @@ const server = app.listen(config.PORT, config.HOST, async () => {
   // Railway / Render / Fly / nginx 등 프록시 뒤에서 이 값이 틀리면
   // "세션 재활용 경계"(CoC 02)가 조용히 무너지므로 눈에 띄게 경고한다.
   const warnings = [];
-  if (config.NODE_ENV === 'production' && config.TRUST_PROXY_HOPS === 0) {
+  if (config.NODE_ENV === 'production' && config.TRUST_PROXY_HOPS === 0 && !config.CLIENT_IP_HEADER) {
     warnings.push(
       'TRUST_PROXY_HOPS=0 인데 production 모드입니다.\n' +
       '     프록시(Railway 등) 뒤라면 모든 접속자가 프록시 IP 하나로 보여\n' +
@@ -104,7 +132,10 @@ const server = app.listen(config.PORT, config.HOST, async () => {
   if (config.NODE_ENV === 'production' && String(process.env.COOKIE_SECURE || 'false') !== 'true') {
     warnings.push('HTTPS 로 서비스한다면 COOKIE_SECURE=true 로 설정하세요.');
   }
-  if (config.TRUST_PROXY_HOPS > 0 && config.NODE_ENV !== 'production') {
+  if (config.DEBUG_IP) {
+    warnings.push('DEBUG_IP=true — /debug/ip 가 공개되어 있습니다. 확인이 끝나면 끄세요.');
+  }
+  if (config.TRUST_PROXY_HOPS > 0 && config.NODE_ENV !== 'production' && !config.CLIENT_IP_HEADER) {
     warnings.push(`TRUST_PROXY_HOPS=${config.TRUST_PROXY_HOPS} — 프록시가 없다면 X-Forwarded-For 위조로 IP 바인딩을 우회할 수 있습니다.`);
   }
 

@@ -200,7 +200,6 @@ git push -u origin main
 
 ```ini
 NODE_ENV=production
-TRUST_PROXY_HOPS=1
 COOKIE_SECURE=true
 
 LLM_BASE_URL=https://openrouter.ai/api/v1
@@ -220,9 +219,32 @@ SEED_USER_EMAIL=user@example.com
 
 > `PORT` 는 Railway 가 자동 주입하므로 **설정하지 마세요.**
 
-**`TRUST_PROXY_HOPS=1` 은 반드시 넣어야 합니다.** Railway 는 리버스 프록시 뒤에서 동작하므로,
-이 값이 0이면 모든 접속자가 프록시 IP 하나로 보여 **명세 02 의 "세션 재활용 경계"가 무력화**됩니다.
-빠뜨리면 부팅 로그에 경고가 찍힙니다.
+#### 클라이언트 IP 판정 (Railway 는 자동)
+
+Railway 는 Envoy 기반이고 **내부 프록시 IP(`100.64.x.x`)가 요청마다 바뀝니다.**
+소켓 IP 나 `X-Forwarded-For` 를 그대로 쓰면 매 요청이 다른 IP 로 보여 세션이 즉시 무효화됩니다.
+
+그래서 Railway 환경변수(`RAILWAY_*`)가 감지되면 **Envoy 엣지가 직접 세팅하는
+`x-envoy-external-address` 헤더**를 자동으로 사용합니다. 별도 설정이 필요 없습니다.
+
+이 헤더는 엣지에서 덮어쓰므로 클라이언트가 위조할 수 없습니다.
+(`X-Forwarded-For` 는 클라이언트가 앞에 값을 끼워넣을 수 있어 IP 바인딩 우회에 쓰일 수 있습니다.)
+
+다른 플랫폼이라면 `CLIENT_IP_HEADER` 로 직접 지정하세요.
+
+| 플랫폼 | 설정 |
+|---|---|
+| Railway | 자동 (`x-envoy-external-address`) |
+| Cloudflare | `CLIENT_IP_HEADER=cf-connecting-ip` |
+| Fly.io | `CLIENT_IP_HEADER=fly-client-ip` |
+| nginx 직접 구성 | `TRUST_PROXY_HOPS=1` |
+
+판정 결과가 의심스러우면 `DEBUG_IP=true` 를 켜고 `/debug/ip` 를 열어
+실제로 들어오는 헤더와 판정 IP 를 확인한 뒤, **확인이 끝나면 반드시 끄세요.**
+
+```bash
+curl -s https://<앱>.up.railway.app/debug/ip
+```
 
 ### 4) 볼륨 (권장)
 

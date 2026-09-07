@@ -4,15 +4,19 @@ const config = require('../config');
 const PRIVATE_V4 = [
   /^10\./, /^127\./, /^192\.168\./, /^169\.254\./,
   /^172\.(1[6-9]|2\d|3[01])\./,
+  /^100\.(6[4-9]|[7-9]\d|1[0-1]\d|12[0-7])\./, // CGNAT 100.64.0.0/10 — Railway 내부망
 ];
 
 function normalize(ip) {
   if (!ip) return '';
   let v = String(ip).trim();
-  if (v.startsWith('::ffff:')) v = v.slice(7); // IPv4-mapped IPv6
-  if (v === '::1') v = '127.0.0.1';
-  const bracket = v.match(/^\[(.+)\]$/);
+  const bracket = v.match(/^\[(.+)\](?::\d+)?$/); // [::1]:443
   if (bracket) v = bracket[1];
+  if (v.startsWith('::ffff:')) v = v.slice(7);    // IPv4-mapped IPv6
+  // IPv4 뒤에 붙은 포트만 떼어낸다 (IPv6 는 콜론이 많으므로 건드리지 않는다)
+  const v4port = v.match(/^(\d{1,3}(?:\.\d{1,3}){3}):\d+$/);
+  if (v4port) v = v4port[1];
+  if (v === '::1') v = '127.0.0.1';
   return v.toLowerCase();
 }
 
@@ -25,24 +29,48 @@ function isPrivate(ip) {
 }
 
 /**
- * 요청의 "공인 IP" 를 판정한다.
- * TRUST_PROXY_HOPS 만큼만 X-Forwarded-For 의 오른쪽에서 건너뛴 값을 취한다.
- * 프록시를 신뢰하지 않는 설정(기본값)에서는 헤더를 완전히 무시하므로,
- * 공격자가 X-Forwarded-For 를 위조해 IP 바인딩을 우회할 수 없다.
+ * 요청의 "공인 IP" 를 판정한다. 우선순위:
+ *
+ *  1) CLIENT_IP_HEADER — 플랫폼 엣지가 직접 세팅하는 신뢰 헤더.
+ *     Railway(Envoy) 는 x-envoy-external-address 를 엣지에서 덮어쓰므로
+ *     클라이언트가 위조할 수 없다. Railway 감지 시 자동으로 켜진다.
+ *
+ *  2) X-Forwarded-For + TRUST_PROXY_HOPS — 일반 리버스 프록시(nginx 등).
+ *     오른쪽 끝이 가장 가까운 프록시이므로 hops 만큼 신뢰하고 그 왼쪽 값을 클라이언트로 본다.
+ *     XFF 는 클라이언트가 앞쪽에 값을 끼워넣을 수 있어 hops 를 실제 구성과 정확히 맞춰야 한다.
+ *
+ *  3) 소켓 IP — 프록시가 없는 경우.
+ *
+ * 반환값이 사설/CGNAT 주소면 프록시 설정이 틀렸다는 뜻이므로 detail.suspect 로 알린다.
  */
-function publicIp(req) {
+function resolve(req) {
   const socketIp = normalize(req.socket?.remoteAddress || req.ip);
+
+  if (config.CLIENT_IP_HEADER) {
+    const raw = req.headers[config.CLIENT_IP_HEADER];
+    if (raw) {
+      const ip = normalize(String(raw).split(',')[0]);
+      if (ip) return { ip, source: `header:${config.CLIENT_IP_HEADER}`, socketIp };
+    }
+  }
+
   const hops = config.TRUST_PROXY_HOPS;
-  if (hops <= 0) return socketIp;
+  if (hops > 0) {
+    const raw = req.headers['x-forwarded-for'];
+    if (raw) {
+      const chain = String(raw).split(',').map(normalize).filter(Boolean);
+      if (chain.length) {
+        const idx = Math.max(0, Math.min(chain.length - hops, chain.length - 1));
+        return { ip: chain[idx], source: `x-forwarded-for[${idx}] (hops=${hops})`, socketIp, chain };
+      }
+    }
+  }
 
-  const raw = req.headers['x-forwarded-for'];
-  if (!raw) return socketIp;
-  const chain = String(raw).split(',').map(normalize).filter(Boolean);
-  if (!chain.length) return socketIp;
-
-  // 오른쪽 끝이 가장 가까운 프록시. hops 만큼 신뢰하고 그 왼쪽 값을 클라이언트로 본다.
-  const idx = chain.length - hops;
-  return chain[Math.max(0, Math.min(idx, chain.length - 1))] || socketIp;
+  return { ip: socketIp, source: 'socket', socketIp };
 }
 
-module.exports = { publicIp, normalize, isPrivate };
+function publicIp(req) {
+  return resolve(req).ip;
+}
+
+module.exports = { publicIp, resolve, normalize, isPrivate };
