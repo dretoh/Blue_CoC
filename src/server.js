@@ -132,6 +132,12 @@ const server = app.listen(config.PORT, config.HOST, async () => {
   if (config.NODE_ENV === 'production' && String(process.env.COOKIE_SECURE || 'false') !== 'true') {
     warnings.push('HTTPS 로 서비스한다면 COOKIE_SECURE=true 로 설정하세요.');
   }
+  if (config.IS_RAILWAY && config.CLIENT_IP_HEADER && config.CLIENT_IP_HEADER !== 'x-real-ip') {
+    warnings.push(
+      `CLIENT_IP_HEADER=${config.CLIENT_IP_HEADER} 로 지정되어 있습니다.\n` +
+      '     Railway 는 x-real-ip 를 사용합니다. 이 환경변수를 삭제하면 자동으로 잡힙니다.'
+    );
+  }
   if (config.DEBUG_IP) {
     warnings.push('DEBUG_IP=true — /debug/ip 가 공개되어 있습니다. 확인이 끝나면 끄세요.');
   }

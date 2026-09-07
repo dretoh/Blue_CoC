@@ -46,6 +46,17 @@ function isPrivate(ip) {
 function resolve(req) {
   const socketIp = normalize(req.socket?.remoteAddress || req.ip);
 
+  // Railway 에서는 엣지가 x-real-ip 를 항상 덮어쓰므로 클라이언트가 위조할 수 없다.
+  // 이 판정은 세션 경계를 지키는 보안 통제이므로, CLIENT_IP_HEADER 를 잘못 지정하더라도
+  // 우회되지 않도록 Railway 에서는 x-real-ip 를 가장 먼저 신뢰한다.
+  if (config.IS_RAILWAY) {
+    const realIp = req.headers['x-real-ip'];
+    if (realIp) {
+      const ip = normalize(String(realIp).split(',')[0]);
+      if (ip) return { ip, source: 'header:x-real-ip (railway)', socketIp };
+    }
+  }
+
   if (config.CLIENT_IP_HEADER) {
     const raw = req.headers[config.CLIENT_IP_HEADER];
     if (raw) {
